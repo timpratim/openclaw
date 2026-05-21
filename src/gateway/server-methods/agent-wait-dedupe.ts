@@ -1,3 +1,4 @@
+import { isNonTerminalAgentRunStatus } from "../../shared/agent-run-status.js";
 import { setSafeTimeout } from "../../utils/timer-delay.js";
 import type { DedupeEntry } from "../server-shared.js";
 
@@ -76,9 +77,7 @@ function notifyWaiters(runId: string): void {
   }
 }
 
-export function readTerminalSnapshotFromDedupeEntry(
-  entry: DedupeEntry,
-): AgentWaitTerminalSnapshot | null {
+function readTerminalSnapshotFromDedupeEntry(entry: DedupeEntry): AgentWaitTerminalSnapshot | null {
   const payload = entry.payload as
     | {
         status?: unknown;
@@ -93,7 +92,7 @@ export function readTerminalSnapshotFromDedupeEntry(
       }
     | undefined;
   const status = typeof payload?.status === "string" ? payload.status : undefined;
-  if (status === "accepted" || status === "started" || status === "in_flight") {
+  if (isNonTerminalAgentRunStatus(status)) {
     return null;
   }
 
@@ -252,7 +251,7 @@ export function setGatewayDedupeEntry(params: {
   notifyWaiters(runId);
 }
 
-export const __testing = {
+export const testing = {
   getWaiterCount(runId?: string): number {
     if (runId) {
       return AGENT_WAITERS_BY_RUN_ID.get(runId)?.size ?? 0;
@@ -267,3 +266,4 @@ export const __testing = {
     AGENT_WAITERS_BY_RUN_ID.clear();
   },
 };
+export { testing as __testing };
